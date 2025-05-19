@@ -21,10 +21,11 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, BookingActivity::class.java))
         }
 
-        findViewById<Button>(R.id.btnViewBookings).setOnClickListener {
+        findViewById<Button>(R.id.btnViewHistory).setOnClickListener {
             startActivity(Intent(this, BookingHistoryActivity::class.java))
         }
     }
+
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

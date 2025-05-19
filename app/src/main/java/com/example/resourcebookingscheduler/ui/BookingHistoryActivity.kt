@@ -1,8 +1,11 @@
 package com.example.resourcebookingscheduler.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.resourcebookingscheduler.R
@@ -21,98 +24,119 @@ class BookingHistoryActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: BookingAdapter
     private val bookings = mutableListOf<Booking>()
+    private val fetchScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_booking_history)
 
-        // ✅ Enable back arrow
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "My Bookings"
+        toolbar.setNavigationOnClickListener { finish() }
 
         recyclerView = findViewById(R.id.recyclerBookings)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         adapter = BookingAdapter(
             onDeleteClick = { booking ->
-                deleteBookingFromServer(booking)
+                deleteBookingOnServer(booking)
             },
-            onItemClick = {}
+            onItemClick = { booking ->
+                val intent = Intent(this, EditBookingActivity::class.java)
+                intent.putExtra("booking", booking)
+                startActivity(intent)
+            }
         )
-
         recyclerView.adapter = adapter
+    }
 
+    override fun onResume() {
+        super.onResume()
         fetchBookingsFromServer()
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressedDispatcher.onBackPressed()
-        return true
+    override fun onDestroy() {
+        super.onDestroy()
+        fetchScope.cancel()
     }
 
     private fun fetchBookingsFromServer() {
-        CoroutineScope(Dispatchers.IO).launch {
+        Log.d("FetchBookings", "🏃‍♂️ fetchBookingsFromServer() called")
+        fetchScope.launch {
             try {
-                val url = URL("http://10.0.2.2:8079/bookings_api/get_bookings.php")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
+                val url = URL("http://10.0.2.2:5000/get_bookings")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
 
-                val response = connection.inputStream.bufferedReader().readText()
-                connection.disconnect()
+                val response = conn.inputStream.bufferedReader().readText()
+                conn.disconnect()
+
+                Log.d("FetchBookings", "📥 Raw response: $response")
 
                 val jsonArray = JSONArray(response)
                 bookings.clear()
-
                 for (i in 0 until jsonArray.length()) {
                     val obj = jsonArray.getJSONObject(i)
-                    val booking = Booking(
-                        id = obj.getInt("id"),
-                        resourceName = obj.getString("resourceName"),
-                        bookedBy = obj.getString("bookedBy"),
-                        date = obj.getString("date"),
-                        startTime = obj.getString("startTime"),
-                        endTime = obj.getString("endTime")
+                    bookings.add(
+                        Booking(
+                            id = obj.getInt("id"),
+                            resourceName = obj.getString("resourceName"),
+                            bookedBy = obj.getString("bookedBy"),
+                            date = obj.getString("date"),
+                            startTime = obj.getString("startTime"),
+                            endTime = obj.getString("endTime")
+                        )
                     )
-                    bookings.add(booking)
                 }
 
                 withContext(Dispatchers.Main) {
                     adapter.submitList(bookings.toList())
+                    if (bookings.isEmpty()) {
+                        Toast.makeText(this@BookingHistoryActivity,
+                            "No bookings found", Toast.LENGTH_SHORT)
+                            .show()
+                    }
                 }
-
             } catch (e: Exception) {
                 Log.e("FetchBookings", "Error: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@BookingHistoryActivity,
+                        "Failed to load bookings", Toast.LENGTH_LONG)
+                        .show()
+                }
             }
         }
     }
 
-    private fun deleteBookingFromServer(booking: Booking) {
-        CoroutineScope(Dispatchers.IO).launch {
+    private fun deleteBookingOnServer(booking: Booking) {
+        fetchScope.launch {
             try {
-                val url = URL("http://10.0.2.2:8079/bookings_api/delete.php")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "POST"
-                connection.setRequestProperty("Content-Type", "application/json")
-                connection.doOutput = true
+                val url = URL("http://10.0.2.2:5000/delete_booking")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.doOutput = true
 
-                val json = JSONObject()
-                json.put("id", booking.id)
-
-                val writer = BufferedWriter(OutputStreamWriter(connection.outputStream))
-                writer.write(json.toString())
-                writer.flush()
-                writer.close()
-
-                val responseCode = connection.responseCode
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    fetchBookingsFromServer()
-                } else {
-                    Log.e("DeleteBooking", "Failed with code $responseCode")
+                val body = JSONObject().put("id", booking.id).toString()
+                BufferedWriter(OutputStreamWriter(conn.outputStream)).use {
+                    it.write(body); it.flush()
                 }
 
-                connection.disconnect()
+                val code = conn.responseCode
+                conn.disconnect()
+                Log.d("DeleteBooking", "Response code: $code")
+
+                // refresh on success
+                if (code in 200..299) fetchBookingsFromServer()
+                else throw Exception("Server returned $code")
             } catch (e: Exception) {
                 Log.e("DeleteBooking", "Error: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@BookingHistoryActivity,
+                        "Delete failed: ${e.message}", Toast.LENGTH_LONG)
+                        .show()
+                }
             }
         }
     }

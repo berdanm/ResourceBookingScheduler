@@ -2,95 +2,67 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#F5F5F5">
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="16dp">
 
-        <!-- single Toolbar only -->
+        <!-- Toolbar -->
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
-            android:title="New Booking"
+            android:title="Edit Booking"
             android:titleTextColor="@android:color/white"
             app:navigationIcon="@drawable/ic_arrow_back" />
 
-        <!-- Resource name -->
         <EditText
             android:id="@+id/editResourceName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Resource Name"
-            android:layout_marginTop="20dp"
-            android:backgroundTint="#6200EE"
-            android:textColor="#000"
-            android:padding="12dp" />
+            android:inputType="text" />
 
-        <!-- Booked by -->
         <EditText
             android:id="@+id/editBookedBy"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Booked By"
-            android:layout_marginTop="12dp"
-            android:backgroundTint="#6200EE"
-            android:textColor="#000"
-            android:padding="12dp" />
+            android:inputType="text" />
 
-        <!-- Date picker field -->
         <EditText
             android:id="@+id/editDate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Date (yyyy-MM-dd)"
-            android:layout_marginTop="12dp"
-            android:backgroundTint="#6200EE"
-            android:textColor="#000"
-            android:padding="12dp"
-            android:focusable="false"
-            android:clickable="true" />
+            android:inputType="date" />
 
-        <!-- Start time picker field -->
         <EditText
             android:id="@+id/editStartTime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Start Time (HH:mm)"
-            android:layout_marginTop="12dp"
-            android:backgroundTint="#6200EE"
-            android:textColor="#000"
-            android:padding="12dp"
-            android:focusable="false"
-            android:clickable="true" />
+            android:inputType="time" />
 
-        <!-- End time picker field -->
         <EditText
             android:id="@+id/editEndTime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="End Time (HH:mm)"
-            android:layout_marginTop="12dp"
-            android:backgroundTint="#6200EE"
-            android:textColor="#000"
-            android:padding="12dp"
-            android:focusable="false"
-            android:clickable="true" />
+            android:inputType="time" />
 
-        <!-- Save button -->
         <Button
-            android:id="@+id/btnSaveBooking"
-            android:layout_width="match_parent"
+            android:id="@+id/btnUpdateBooking"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Save Booking"
-            android:layout_marginTop="20dp"
-            android:backgroundTint="#4CAF50"
-            android:textColor="#FFF"
-            android:textSize="16sp" />
+            android:text="Update Booking"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="@color/purple_500"
+            android:textColor="@android:color/white"/>
     </LinearLayout>
 </ScrollView>
